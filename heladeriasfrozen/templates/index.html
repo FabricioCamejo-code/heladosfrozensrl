@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Chat Bot - HeladeriasFrozenSRL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <style>
+        /* Estilos generales */
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        /* Estilos para el chatbot */
+        
+        #chat-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #0066cc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #chat-container {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 400px;
+            max-height: 80vh;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            display: none;
+        }
+        
+        #chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #0066cc;
+            color: #fff;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+        
+        #chat-title {
+            font-size: 16px;
+        }
+        
+        #chat-close {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        #chat-close:hover {
+            color: #ff0000;
+        }
+        
+        #chat-log {
+            max-height: calc(80vh - 120px);
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        #message-input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        #send-button {
+            display: block;
+            margin-top: 10px;
+            background-color: #0066cc;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #send-button:hover {
+            background-color: #0052b3;
+        }
+        /* Estilos para los mensajes del usuario */
+        
+        .user-message {
+            text-align: right;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            /* Ajusta el margen superior según tus preferencias */
+        }
+        /* Estilos para los mensajes del bot */
+        
+        .bot-message {
+            text-align: left;
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .bot-message .ice-cream-icon {
+            display: inline-block;
+        }
+        /* Estilos para los emotes de helados */
+        
+        .ice-cream-icon {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-icon">
+        <i class="fas fa-ice-cream"></i>
+    </div>
+
+    <div id="chat-container">
+        <div id="chat-header">
+            <span id="chat-title">HeladeriasFrozenSRL</span>
+            <hr />
+            <span id="chat-close" title="Cerrar"><i class="fas fa-times"></i></span>
+        </div>
+        <div id="chat-log"></div>
+        <input type="text" id="message-input" placeholder="Escribe un mensaje..." />
+        <button id="send-button">Enviar</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var chatIcon = document.getElementById("chat-icon");
+            var chatContainer = document.getElementById("chat-container");
+            var chatLog = document.getElementById("chat-log");
+            var messageInput = document.getElementById("message-input");
+            var sendButton = document.getElementById("send-button");
+            var chatClose = document.getElementById("chat-close");
+            var awaitingCoupon = false;
+
+            chatIcon.addEventListener("click", function() {
+                chatIcon.style.display = "none";
+                chatContainer.style.display = "block";
+                messageInput.focus();
+            });
+
+            chatClose.addEventListener("click", function() {
+                chatContainer.style.display = "none";
+                chatIcon.style.display = "block";
+            });
+
+            sendButton.addEventListener("click", function(event) {
+                event.preventDefault(); // Evitar el envío automático del formulario
+
+                var message = messageInput.value.trim();
+                if (message !== "") {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "handle_message/", true);
+                    xhr.setRequestHeader(
+                        "Content-Type",
+                        "application/x-www-form-urlencoded"
+                    );
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            var response = xhr.responseText.trim();
+                            var userMessage = document.createElement("div");
+                            userMessage.classList.add("user-message");
+                            userMessage.textContent = message;
+                            chatLog.appendChild(userMessage);
+
+                            var botMessage = document.createElement("div");
+                            botMessage.classList.add("bot-message");
+                            botMessage.innerHTML = `<i class="fas fa-ice-cream ice-cream-icon"></i>${response}`;
+                            chatLog.appendChild(botMessage);
+
+                            messageInput.value = "";
+                            chatLog.scrollTop = chatLog.scrollHeight;
+                        }
+                    };
+
+                    var data = "message=" + encodeURIComponent(message);
+                    if (awaitingCoupon) {
+                        xhr.send(data);
+                        awaitingCoupon = false; // Asegúrate de desactivar la bandera awaitingCoupon después de enviar el cupón
+                    } else {
+                        xhr.send(data);
+                    }
+                }
+            });
+
+            messageInput.addEventListener("keyup", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault(); // Evitar el envío automático del formulario
+                    sendButton.click();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
